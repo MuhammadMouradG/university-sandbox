@@ -30,7 +30,7 @@ module.exports = {
 			WHERE id=('${studentID}')`
 		);
 
-		const allowedCourses = await sqlQuery(`SELECT pre.course_id AS id
+		const openedCourses = await sqlQuery(`SELECT pre.course_id AS id
 			FROM prerequisite AS pre
 			INNER JOIN (SELECT course_id
 				  FROM registration
@@ -39,18 +39,27 @@ module.exports = {
 				) AS passedCourses
 			ON pre.pre_id=passedCourses.course_id`
 		);
-		console.log(allowedCourses.length);
 
-		if (allowedCourses.length > 0) {
+		if (openedCourses.length > 0) {
 			result = await sqlQuery(`SELECT DISTINCT course.*
 				FROM course, student
-				WHERE ((('${allowedCourses[0].id}')=course.id
+				WHERE ((('${openedCourses[0].id}')=course.id
 						  AND student.semester=course.semester
+						  AND course.id NOT IN (SELECT course_id
+										FROM registration
+										WHERE student_id=('${studentID}')
+											AND ((mark >= 60) OR (mark IS NULL))
+										)
 					  )
 					OR (course.id NOT IN (SELECT course_id
 										FROM prerequisite
 									   )
 								AND student.semester=course.semester
+								AND course.id NOT IN (SELECT course_id
+										FROM registration
+										WHERE student_id=('${studentID}')
+											AND ((mark >= 60) OR (mark IS NULL))
+										)
 					)
 				)`
 			);
@@ -60,10 +69,14 @@ module.exports = {
 				WHERE course.id NOT IN (SELECT course_id
 									FROM prerequisite
 								   )
-					AND student.semester>=course.semester`
+					AND student.semester>=course.semester
+					AND course.id NOT IN (SELECT course_id
+										FROM registration
+										WHERE student_id=('${studentID}')
+											AND ((mark >= 60) OR (mark IS NULL))
+										)`
 			);
 		};
-
 
 		return res.render('student/register', {
 			activePath: '/students',
