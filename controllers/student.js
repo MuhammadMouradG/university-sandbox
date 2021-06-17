@@ -96,8 +96,15 @@ module.exports = {
     },
 
     postAddMarks: async (req, res) => {
-        // ..
-    },
+		const studentID = req.params.id;
+		const courses = req.body;
+		for (var courseID in courses){
+			var courseMark = courses[courseID];
+			await sqlQuery(`INSERT INTO registration
+				(student_id, course_id, mark)
+				VALUES (('${studentID}'), ('${courseID}'), ('${courseMark}'))`
+			);
+		}
 
     getViewReport: async (req, res) => {
         // ..
