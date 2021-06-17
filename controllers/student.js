@@ -94,8 +94,8 @@ module.exports = {
 
 		const result = await sqlQuery(`SELECT * FROM course
 			WHERE id IN (SELECT course_id
-			FROM registration
-			WHERE student_id=('${studentID}') AND mark=null)`
+						FROM registration
+						WHERE (student_id=('${studentID}')) AND mark IS NULL)`
 		);
 
 		return res.render('student/addMarks', {
@@ -109,16 +109,19 @@ module.exports = {
 		const studentID = req.params.id;
 		const courses = req.body;
 		for (var courseID in courses){
-			var courseMark = courses[courseID];
-			await sqlQuery(`INSERT INTO registration
-				(student_id, course_id, mark)
-				VALUES (('${studentID}'), ('${courseID}'), ('${courseMark}'))`
+			var courseMark = courses[courseID].length > 0 ? courses[courseID] : 'NULL';
+			await sqlQuery(`UPDATE registration
+				SET mark=('${courseMark}')
+				WHERE ('${courseMark}')!= 'NULL'
+					AND student_id=('${studentID}')
+					AND course_id=('${courseID}')`
 			);
-		}
+		};
 
 		const gpa = await studentService.getTotalGPA(studentID);
+		const semester = await studentService.getSemester(studentID);
 		await sqlQuery(`UPDATE student
-			SET gpa=('${gpa}')
+			SET gpa=('${gpa}'), semester=('${semester}')
 			WHERE id=('${studentID}')`
 		);
 
