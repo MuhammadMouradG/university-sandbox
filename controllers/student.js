@@ -86,18 +86,30 @@ module.exports = {
 	},
 
     postRegistration: async (req, res) => {
-        const Ch_courses = req.body.courses;
-        for (var i = 0; i < Ch_courses; i++) {
-            const ChosenCourses = await sqlQuery('INSERT INTO registration (student_id, course_id, mark) VALUES (${studentID}, course , NULL)'  );
-        }
-        
-        console.log(req.body);
-        return res.redirect('student/allowedCourses', {
-            activePath: '/students',
-            registration: result
-        });
+		const studentID = req.params.id;
+		const chCourses = req.body.courses;
+		if (chCourses instanceof Array) {
+			for (i = 0; i < chCourses.length; i++) {
+				await sqlQuery(`DELETE FROM registration
+					WHERE mark < 60
+						AND student_id=('${studentID}')
+						AND course_id=('${chCourses[i]}')`);
+				await sqlQuery(`INSERT INTO registration (student_id, course_id)
+					VALUES (('${studentID}'), ('${chCourses[i]}'))`
+				);
+			};
+		} else {
+			await sqlQuery(`DELETE FROM registration
+					WHERE mark < 60
+						AND student_id=('${studentID}')
+						AND course_id=('${chCourses}')`);
+			await sqlQuery(`INSERT INTO registration (student_id, course_id)
+				VALUES (('${studentID}'), ('${chCourses}'))`
+			);
+		};
 
-    },
+		return res.redirect('/students');
+	},
 
     getAddMarks: async (req, res) => {
 		const studentID = req.params.id;
