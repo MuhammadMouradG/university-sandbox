@@ -1,34 +1,33 @@
-const lodash = require('lodash');
-const sqlQuery = require('../config/db');
-const studentService = require('../services/student');
+const lodash = require("lodash");
+const sqlQuery = require("../config/db");
+const studentService = require("../services/student");
 
 module.exports = {
-    getStudents: async (req, res) => {
-        const result = await sqlQuery('SELECT * FROM student');
-        return res.render('student/list', {
-            activePath: '/students',
-            students: result
-        });
-    },
+	getStudents: async (req, res) => {
+		const result = await sqlQuery("SELECT * FROM student");
+		return res.render("student/list", {
+			activePath: "/students",
+			students: result,
+		});
+	},
 
-    getNewStudent: async (req, res) => {
-        return res.render('student/new', {
-            activePath: '/students'
-        });
-    },
+	getNewStudent: async (req, res) => {
+		return res.render("student/new", {
+			activePath: "/students",
+		});
+	},
 
-    postNewStudent: async (req, res) => {
-        const name = req.body.name;
-        await sqlQuery(`INSERT INTO student (name) values ('${name}')`);
-        return res.redirect('/students');
-    },
+	postNewStudent: async (req, res) => {
+		const name = req.body.name;
+		await sqlQuery(`INSERT INTO student (name) values ('${name}')`);
+		return res.redirect("/students");
+	},
 
-    getRegistration: async (req, res) => {
+	getRegistration: async (req, res) => {
 		let result;
 		const studentID = req.params.id;
 		const student = await sqlQuery(`SELECT * FROM student
-			WHERE id=('${studentID}')`
-		);
+			WHERE id=('${studentID}')`);
 
 		const openedCourses = await sqlQuery(`SELECT pre.course_id AS id
 			FROM prerequisite AS pre
@@ -37,8 +36,7 @@ module.exports = {
 				  WHERE student_id=('${studentID}')
 					AND mark >= 60
 				) AS passedCourses
-			ON pre.pre_id=passedCourses.course_id`
-		);
+			ON pre.pre_id=passedCourses.course_id`);
 
 		if (openedCourses.length > 0) {
 			result = await sqlQuery(`SELECT DISTINCT course.*
@@ -61,8 +59,7 @@ module.exports = {
 											AND ((mark >= 60) OR (mark IS NULL))
 										)
 					)
-				)`
-			);
+				)`);
 		} else {
 			result = await sqlQuery(`SELECT DISTINCT course.*
 				FROM course, student
@@ -74,18 +71,17 @@ module.exports = {
 										FROM registration
 										WHERE student_id=('${studentID}')
 											AND ((mark >= 60) OR (mark IS NULL))
-										)`
-			);
-		};
+										)`);
+		}
 
-		return res.render('student/register', {
-			activePath: '/students',
+		return res.render("student/register", {
+			activePath: "/students",
 			student: student[0],
-			allowedCourses: result
+			allowedCourses: result,
 		});
 	},
 
-    postRegistration: async (req, res) => {
+	postRegistration: async (req, res) => {
 		const studentID = req.params.id;
 		const chCourses = req.body.courses;
 		if (chCourses instanceof Array) {
@@ -95,65 +91,60 @@ module.exports = {
 						AND student_id=('${studentID}')
 						AND course_id=('${chCourses[i]}')`);
 				await sqlQuery(`INSERT INTO registration (student_id, course_id)
-					VALUES (('${studentID}'), ('${chCourses[i]}'))`
-				);
-			};
+					VALUES (('${studentID}'), ('${chCourses[i]}'))`);
+			}
 		} else {
 			await sqlQuery(`DELETE FROM registration
 					WHERE mark < 60
 						AND student_id=('${studentID}')
 						AND course_id=('${chCourses}')`);
 			await sqlQuery(`INSERT INTO registration (student_id, course_id)
-				VALUES (('${studentID}'), ('${chCourses}'))`
-			);
-		};
+				VALUES (('${studentID}'), ('${chCourses}'))`);
+		}
 
-		return res.redirect('/students');
+		return res.redirect("/students");
 	},
 
-    getAddMarks: async (req, res) => {
+	getAddMarks: async (req, res) => {
 		const studentID = req.params.id;
 		const student = await sqlQuery(`SELECT * FROM student
-			WHERE id=('${studentID}')`
-		);
+			WHERE id=('${studentID}')`);
 
 		const result = await sqlQuery(`SELECT * FROM course
 			WHERE id IN (SELECT course_id
 						FROM registration
-						WHERE (student_id=('${studentID}')) AND mark IS NULL)`
-		);
+						WHERE (student_id=('${studentID}')) AND mark IS NULL)`);
 
-		return res.render('student/addMarks', {
-			activePath: '/students',
+		return res.render("student/addMarks", {
+			activePath: "/students",
 			student: student[0],
-			courses: result
+			courses: result,
 		});
-    },
+	},
 
-    postAddMarks: async (req, res) => {
+	postAddMarks: async (req, res) => {
 		const studentID = req.params.id;
 		const courses = req.body;
-		for (var courseID in courses){
-			var courseMark = courses[courseID].length > 0 ? courses[courseID] : 'NULL';
+		for (var courseID in courses) {
+			var courseMark =
+				courses[courseID].length > 0 ? courses[courseID] : "NULL";
 			await sqlQuery(`UPDATE registration
 				SET mark=('${courseMark}')
 				WHERE ('${courseMark}')!= 'NULL'
 					AND student_id=('${studentID}')
-					AND course_id=('${courseID}')`
-			);
-		};
+					AND course_id=('${courseID}')`);
+		}
 
 		const gpa = await studentService.getTotalGPA(studentID);
 		const semester = await studentService.getSemester(studentID);
 		await sqlQuery(`UPDATE student
 			SET gpa=('${gpa}'), semester=('${semester}')
-			WHERE id=('${studentID}')`
-		);
+			WHERE id=('${studentID}')`);
 
-		return res.redirect('/students');
+		return res.redirect("/students");
 	},
 
-    getViewReport: async (req, res) => {
-        // ..
-    }
+	getViewReport: async (req, res) => {
+		// ..
+	},
 };
