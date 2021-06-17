@@ -106,6 +106,15 @@ module.exports = {
 			);
 		}
 
+		const gpa = await studentService.getTotalGPA(studentID);
+		await sqlQuery(`UPDATE student
+			SET gpa=('${gpa}')
+			WHERE id=('${studentID}')`
+		);
+
+		return res.redirect('/students');
+	},
+
     getViewReport: async (req, res) => {
         // ..
     }
