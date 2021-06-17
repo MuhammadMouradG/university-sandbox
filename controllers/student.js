@@ -77,7 +77,22 @@ module.exports = {
     },
 
     getAddMarks: async (req, res) => {
-        // ..
+		const studentID = req.params.id;
+		const student = await sqlQuery(`SELECT * FROM student
+			WHERE id=('${studentID}')`
+		);
+
+		const result = await sqlQuery(`SELECT * FROM course
+			WHERE id IN (SELECT course_id
+			FROM registration
+			WHERE student_id=('${studentID}') AND mark=null)`
+		);
+
+		return res.render('student/addMarks', {
+			activePath: '/students',
+			student: student[0],
+			courses: result
+		});
     },
 
     postAddMarks: async (req, res) => {
